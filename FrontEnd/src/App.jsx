@@ -1,3 +1,4 @@
+// Importação de hooks, componentes e bibliotecas externas
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Alert, Stack, Snackbar, Typography, Box, Button } from "@mui/material";
@@ -10,11 +11,13 @@ import SimpleText from "./simpleText";
 
 export default function App(){
 
+	// Estados de autenticação e usuário
 	const [isLoggedIn, setIsLoggedIn] = useState(false);
 	const [userLogin, setUserLogin] = useState("");
 	const [userTipo, setUserTipo] = useState("");
 	const [permissoes, setPermissoes] = useState([]);
 
+	// Verifica token no localStorage ao carregar a aplicação
 	useEffect(() => {
 		// Verifica se há token no localStorage ao carregar
 		const token = localStorage.getItem("token");
@@ -33,22 +36,22 @@ export default function App(){
 		}
 	}, []);
 
-	// useEffect(() => {
-	// 	// Busca permissões quando o usuário estiver logado e tiver tipo
-	// 	if (isLoggedIn && userTipo) {
-	// 		buscarPermissoesUsuario(userTipo);
-	// 	}
-	// }, [isLoggedIn, userTipo]);
-
+	// Busca o tipo do usuário ao logar
 	useEffect(() => {
 		if (isLoggedIn && userLogin) {
 			buscarTipoUsuario(userLogin);
 		}
 	}, [isLoggedIn, userLogin]);
 
+	// Função para buscar o tipo do usuário no servidor
 	const buscarTipoUsuario = async (login) => {
 		try {
-			const response = await axios.get(`http://localhost:3002/usuario/tipo/${login}`);
+			const token = localStorage.getItem("token");
+			const response = await axios.get(`http://localhost:3002/usuario/tipo/${login}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
 			iterarRequestCount();
 			setUserTipo(response.data.tipo.tipo);
 		} catch (error) {
@@ -57,21 +60,7 @@ export default function App(){
 		}
 	}
 
-	// const buscarPermissoesUsuario = async (tipo) => {
-	// 	try {
-	// 		const token = localStorage.getItem("token");
-	// 		console.log("aaa");
-	// 		const response = await axios.get(`http://localhost:3002/permissoes/${tipo}`);
-			// iterarRequestCount();
-	// 		console.log("bbb");
-	// 		console.log(response);
-	// 		setPermissoes(response.data.permissoes);
-	// 	} catch (error) {
-	// 		console.log(error);
-	// 		alertHandler(error.status, "login", "usuário", "buscar");
-	// 	}
-	// };
-
+	// Função para tratar login
 	const handleLogin = (success, username = null) => {
 		if (success) {
 			// Se o username foi passado, usa ele, senão tenta decodificar do token
@@ -98,6 +87,7 @@ export default function App(){
 		}
 	};
 
+	// Função para tratar logout
 	const handleLogout = () => {
 		setIsLoggedIn(false);
 		setUserLogin("");
@@ -105,6 +95,7 @@ export default function App(){
 		localStorage.removeItem("token");
 	};
 
+	// Contadores para requisições (usados para a dashboard)
 	const [requestCount, setRequestCount] = useState(0);
 
 	function iterarRequestCount() {
@@ -117,6 +108,7 @@ export default function App(){
 		setDashboardRequestCount(dashboardRequestCount + 3);
 	}
 
+	// Estados e funções para exibir mensagens de alerta
 	const [openMessage, setOpenMessage] = useState(false);
 	const [messageText, setMessageText] = useState("");
 	const [messageSeverity, setMessageSeverity] = useState("warning");
@@ -164,10 +156,12 @@ export default function App(){
 		setOpenMessage(false);
 	}
 
+	// Estados para alternar exibição de telas
 	const [exibeClientes, setExibeClientes] = useState(false);
 	const [exibeOrcamentos, setExibeOrcamentos] = useState(false);
 	const [exibeDashboard, setExibeDashboard] = useState(false);
 
+	// Funções para alternar entre as telas principais
 	const toggleClientes = () => {
 		setExibeClientes(!exibeClientes);
 		setExibeOrcamentos(false);
@@ -206,6 +200,7 @@ export default function App(){
 	// Se estiver logado, mostra o conteúdo principal
 	return (
 		<Stack spacing={2}>
+			{/* Título e informações do usuário */}
 			<SimpleText component={"h1"} text={"Gerenciador financeiro de mecânica"}/>
 			<Stack spacing={2} direction="row" alignItems="center">
 				<SimpleText component={"p"} text={`Usuário: ${userLogin}`}/>
@@ -219,15 +214,19 @@ export default function App(){
 					Sair
 				</Button>
 			</Stack>
+			{/* Botões de navegação */}
 			<Stack spacing={2} direction="row" alignItems="center">
 				<BotaoBusca texto={'Clientes'} funcao={toggleClientes}/>
 				<BotaoBusca texto={'Orçamentos'} funcao={toggleOrcamentos}/>
 				<BotaoBusca texto={'Dashboard'} funcao={toggleDashboard}/>
 			</Stack>
+			{/* Renderização condicional das telas principais */}
 				{ exibeDashboard && <Dashboard alertHandler={alertHandler} requestCount={requestCount} tipoUsuario={userTipo}
 					dashboardRequestCount={dashboardRequestCount} iterarDashboardRequestCount={iterarDashboardRequestCount}/>}
 				{ exibeClientes && <Cliente alertHandler={alertHandler} iterarRequestCount={iterarRequestCount}/> }
 				{ exibeOrcamentos && <Orcamento alertHandler={alertHandler} iterarRequestCount={iterarRequestCount}/> }
+				{ (exibeOrcamentos || exibeClientes) && <SimpleText text={"Obs: Para ordenar ou filtrar alguma coluna mova o mouse para o cabeçalho da coluna e clique os 3 pontinhos a direita para abrir o menu."} component={"p"}/>}
+			{/* Snackbar para mensagens de alerta */}
 			<Snackbar
 				open={openMessage}
 				autoHideDuration={6000}

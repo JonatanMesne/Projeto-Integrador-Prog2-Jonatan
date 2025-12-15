@@ -1,5 +1,7 @@
+// Importação de bibliotecas externas
 import { Typography } from "@mui/material";
 
+// Componente para padronizar os textos exibidos ao usuário
 export default function SimpleText({ text, component }) {
     let variant;
     if(component === "h1") {

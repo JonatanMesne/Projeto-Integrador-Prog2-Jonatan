@@ -33,24 +33,25 @@ const atualizarCliente = async (cliente) => {
 };
 
 // Função para deletar um cliente
+// Primeiro busca todos os veículos do cliente, depois deleta orçamentos relacionados e por fim deleta o cliente
 const deletarCliente = async (cliente) => {
 	try {
+		// Busca todos os veículos associados ao cliente
 		const vehicleIdsSubquery = await model.Veiculo.findAll({
-			attributes: ['id'], // Select only the primary key (id)
+			attributes: ['id'], 
 			where: {
 				fk_cliente_cpf_cnpj: cliente.cpf_cnpj,
 			},
-			raw: true, // Return plain objects instead of Sequelize instances
+			raw: true, // Retorna objetos simples ao invés de instâncias Sequelize
 		});
 
-		// Extract the IDs into a flat array
+		// Extrai os IDs dos veículos em um array
 		const vehicleIds = vehicleIdsSubquery.map(veiculo => veiculo.id);
 
 		if (vehicleIds.length != 0) {
-			// Step 2: Use the IDs to delete the corresponding Orcamento records
+			// Se houver veículos, deleta todos os orçamentos relacionados a esses veículos
 			const deleteResult = await model.Orcamento.destroy({
 				where: {
-					// WHERE fk_veiculo_id IN (...)
 					fk_veiculo_id: {
 						[model.Sequelize.Op.in]: vehicleIds
 					}
@@ -58,6 +59,7 @@ const deletarCliente = async (cliente) => {
 			});
 		}
 
+		// Por fim, deleta o cliente
 		return await model.Cliente.destroy({ where: { cpf_cnpj: cliente.cpf_cnpj } });
 	} catch (error) {
 		throw error;

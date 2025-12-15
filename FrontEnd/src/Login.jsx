@@ -1,16 +1,20 @@
+// Importação de hooks, bibliotecas e componentes externos
 import React from "react";
 import axios from "axios";
 
 import { Alert, Box, Button, Snackbar, Stack, TextField } from "@mui/material";
 
 export default function Login({ handleLogin, iterarRequestCount }) {
+	// Estados para armazenar usuário e senha
 	const [username, setUsername] = React.useState("");
 	const [passwd, setPasswd] = React.useState("");
 
+	// Estados para controle de mensagens de alerta
 	const [openMessage, setOpenMessage] = React.useState(false);
 	const [messageText, setMessageText] = React.useState("");
 	const [messageSeverity, setMessageSeverity] = React.useState("success");
 
+	// Função chamada ao submeter o formulário de login
 	async function enviaLogin(event) {
 		event.preventDefault();
 		try {
@@ -22,10 +26,10 @@ export default function Login({ handleLogin, iterarRequestCount }) {
 			if (response.status >= 200 && response.status < 300) {
 				// Salva o token JWT na sessão
 				localStorage.setItem("token", response.data.token);
-				// seta o estado do login caso tudo deu certo, passando o username
+				 // Seta o estado do login caso tudo deu certo, passando o username
 				handleLogin(true, username);
 			} else {
-				// falha
+				// Falha na autenticação
 				console.error("Falha na autenticação");
 				setOpenMessage(true);
 				setMessageText("Falha na autenticação!");
@@ -39,6 +43,7 @@ export default function Login({ handleLogin, iterarRequestCount }) {
 		}
 	}
 
+	// Função chamada ao clicar em cancelar
 	function cancelaLogin() {
 		if (username !== "" || passwd !== "") {
 			setUsername("");
@@ -49,6 +54,7 @@ export default function Login({ handleLogin, iterarRequestCount }) {
 		setMessageSeverity("warning");
 	}
 
+	// Função para fechar o Snackbar de mensagem
 	function handleCloseMessage(_, reason) {
 		if (reason === "clickaway") {
 			return;
@@ -56,6 +62,7 @@ export default function Login({ handleLogin, iterarRequestCount }) {
 		setOpenMessage(false);
 	}
 
+	// Renderização do formulário de login
 	return (
 		<Box style={{ maxWidth: "300px" }}>
 			<Stack spacing={2}>
@@ -106,6 +113,7 @@ export default function Login({ handleLogin, iterarRequestCount }) {
 						Cancelar
 					</Button>
 				</Stack>
+				{/* Snackbar para mensagens de alerta */}
 				<Snackbar
 					open={openMessage}
 					autoHideDuration={6000}

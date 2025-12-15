@@ -1,3 +1,4 @@
+// Importação de hooks e bibliotecas externas
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Stack } from "@mui/material";
@@ -8,13 +9,17 @@ import InputCrud from "./InputCrud";
 import BotoesCrud from "./BotoesCrud";
 import Botao from "./Botao";
 
-
+// Função principal do componente ClienteVeiculos
 export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCount }) {
+    // Hook para acessar o tema do Material UI
     const theme = useTheme();
+    // Verifica se a tela é pequena
     const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
     
+    // Estado para armazenar a lista de veículos
     const [veiculos, setVeiculos] = useState([]);
-    //sum of all columns widths should be 948 to fit in the DataGrid container
+    // Definição das colunas da tabela de veículos
+    // A soma do comprimento de todas as colunas deve ser 948 para caber no DataGrid (width: 1000 - 52 para o bloco de seleção)
     const columns = [
         { field: "id", headerName: "ID", width: 150 },
         { field: "marca", headerName: "Marca", width: 150 },
@@ -23,19 +28,27 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
         { field: "numero_chassis", headerName: "Número do Chassi", width: 248 },
     ];
 
+    // Função para remover máscaras de strings
     function removeMask(text) {
         return text.replace(/\D/g, '');
     }
 
+    // Função para buscar veículos do cliente no servidor
     const buscarVeiculos = async () => {
         try {
-            const response = await axios.get(`http://localhost:3002/veiculo/${removeMask(cpfCnpj)}`);
+            const token = localStorage.getItem("token");
+            const response = await axios.get(`http://localhost:3002/veiculo/${removeMask(cpfCnpj)}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
             iterarRequestCount();
             if (response.status === 204) {
                 alertHandler(204, "ID", "veículo", "buscar");
             }
             let placeHolderVeiculos = response.data.veiculos;
             if (placeHolderVeiculos) {
+                // Garante que placa e número do chassi não sejam nulos
                 placeHolderVeiculos.forEach(veiculo => {
                     if(veiculo.placa == null) {
                         veiculo.placa = "";
@@ -52,11 +65,13 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
         }
     };
 
+    // Atualiza veículos ao montar componente ou mudar cpfCnpj
     useEffect(() => {
         buscarVeiculos();
         setFkClienteCpfCnpj(cpfCnpj);
     }, [cpfCnpj]);
 
+    // Estados para os campos do formulário
     const [id, setId] = useState('');
     const [marca, setMarca] = useState('');
     const [modelo, setModelo] = useState('');
@@ -64,6 +79,7 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
     const [numero_chassis, setNumeroChassis] = useState('');
     const [fk_cliente_cpf_cnpj, setFkClienteCpfCnpj] = useState(cpfCnpj);
 
+    // Função para incluir um novo veículo
     const incluiVeiculo = async () => {
         let tempPlaca = placa;
         if (tempPlaca === '') {
@@ -74,9 +90,14 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
             tempNumeroChassis = null;
         }
         try {
+            const token = localStorage.getItem("token");
             const response = await axios.post(
                 "http://localhost:3002/veiculo/", { marca: marca, modelo: modelo, placa: tempPlaca, 
-                    numero_chassis: tempNumeroChassis, fk_cliente_cpf_cnpj: removeMask(cpfCnpj) }
+                    numero_chassis: tempNumeroChassis, fk_cliente_cpf_cnpj: removeMask(cpfCnpj) }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
             );
             iterarRequestCount();
             buscarVeiculos();
@@ -90,6 +111,7 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
         }
     }
 
+    // Função para alterar um veículo existente
     const alteraVeiculo = async () => {
         let tempPlaca = placa;
         if (tempPlaca === '') {
@@ -100,9 +122,14 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
             tempNumeroChassis = null;
         }
         try {
+            const token = localStorage.getItem("token");
             const response = await axios.put(
                 `http://localhost:3002/veiculo/${id}`, { marca: marca, modelo: modelo, placa: tempPlaca, 
-                    numero_chassis: tempNumeroChassis, fk_cliente_cpf_cnpj: removeMask(cpfCnpj) }
+                    numero_chassis: tempNumeroChassis, fk_cliente_cpf_cnpj: removeMask(cpfCnpj) }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
             );
             iterarRequestCount();
             if (response.status === 204) {
@@ -119,10 +146,16 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
         }
     }
 
+    // Função para excluir um veículo
     const excluirVeiculo = async () => {
         try {
+            const token = localStorage.getItem("token");
             const response = await axios.delete(
-                `http://localhost:3002/veiculo/${id}`
+                `http://localhost:3002/veiculo/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
             );
             iterarRequestCount();
             if (response.status === 204) {
@@ -139,6 +172,7 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
         }
     }
 
+    // Função chamada ao selecionar uma linha da tabela
     const onRowSelect = (rowId) => {
         const selectedRow = veiculos.find(veiculo => veiculo.id === rowId);
         if (selectedRow) {
@@ -150,6 +184,7 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
         }
     }
 
+    // Limpa os campos do formulário
     function clearFields() {
         setId('');
         setMarca('');
@@ -158,9 +193,12 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
         setNumeroChassis('');
     }
 
+    // Renderização do componente
     return (
         <Stack spacing={2}>
+            {/* Tabela de veículos do cliente */}
             <Tabela entidade={"Veículos do cliente"} colunas={columns} linhas={veiculos} idFunc={(linha) => {return linha.id} } onRowSelect={onRowSelect}/>
+            {/* Campos do formulário */}
             <Stack spacing={2} direction="row">
                 <InputCrud nomeCampo={"ID"} value={id} setValue={setId} numero={true} maxLength={50}/>
                 <InputCrud nomeCampo={"Marca"} value={marca} setValue={setMarca} maxLength={20}/>
@@ -176,6 +214,7 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
                 <InputCrud nomeCampo={"Número do Chassi"} value={numero_chassis} setValue={setNumeroChassis} maxLength={17}/>
                 <InputCrud nomeCampo={"CPF/CNPJ do cliente"} value={fk_cliente_cpf_cnpj} setValue={setFkClienteCpfCnpj} cpfCnpj={true}/>
             </Stack> }
+            {/* Botões de ação */}
             <Stack spacing={2} direction="row">
                 <BotoesCrud incluir={incluiVeiculo} alterar={alteraVeiculo} excluir={excluirVeiculo}/>
                 { !isSmallScreen && <>

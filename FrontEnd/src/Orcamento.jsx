@@ -1,3 +1,4 @@
+// Importação de hooks e bibliotecas externas
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Stack, Checkbox, FormControlLabel, Select, MenuItem, InputLabel, FormControl } from "@mui/material";
@@ -13,14 +14,17 @@ import BotoesCrud from "./BotoesCrud";
 import StringMask from "string-mask";
 import Botao from "./Botao";
 
-
+// Função principal do componente Orcamento
 export default function Orcamento({ alertHandler, iterarRequestCount }) {
+    // Hook para acessar o tema do Material UI
     const theme = useTheme();
+    // Verifica se a tela é pequena
     const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
     
+    // Estado para armazenar a lista de orçamentos
     const [orcamentos, setOrcamento] = useState([]);
 
-    //sum of all columns widths should be 948 to fit in the DataGrid container
+    // Definição das colunas da tabela de orçamentos
     const columns = [
         { field: "nome", headerName: "Nome do Cliente", width: 250 },
         { field: "data", headerName: "Data", width: 150 },
@@ -30,42 +34,54 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
         { field: "valor_total", headerName: "Valor total", width: 170},
     ];
 
+    // Máscaras para formatação de CPF, CNPJ e valores monetários
     const maskCpf = new StringMask('000.000.000-00');
     const maskCnpj = new StringMask('00.000.000/0000-00');
-    const maskDinheiro = new StringMask('R\$ #.##0,00', {reverse: true});
+    const maskDinheiro = new StringMask('R$ #.##0,00', {reverse: true});
     const maskFloat = new StringMask('#0.00', {reverse: true});
     
+    // Função para remover máscaras de strings
     function removeMask(text) {
         return text.replace(/\D/g, '');
     }
 
+    // Função para remover máscara de dinheiro e aplicar a máscara de float para enviar dados ao servidor
     function removeMaskDinheiro(text) {
         return maskFloat.apply(removeMask(text));
     }
 
+    // Função para reverter data do formato DD/MM/YYYY para YYYY-MM-DD
     function reverterData(data) {
         const parts = data.split('/');
         return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
 
+    // Função para converter objeto dayjs para string no formato YYYY-MM-DD
     function dayjsDateToString(data) {
         return `${data.$y}-${data.$M + 1}-${data.$D}`
     }
 
+    // Função para buscar orçamentos no servidor
     const buscarOrcamentos = async () => {
         try {
-            const response = await axios.get("http://localhost:3002/orcamento/todos");
+            const token = localStorage.getItem("token");
+            const response = await axios.get("http://localhost:3002/orcamento/todos", {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
             iterarRequestCount();
             if (response.status === 204) {
                 alertHandler(204, "id", "orcamento", "buscar");
             }
             let placeHolderOrcamentos = response.data.orcamentos;
+            // Aplica máscaras e formatações nos dados recebidos
             placeHolderOrcamentos.forEach(orcamento => {
                 orcamento.Veiculo.Cliente.cpf_cnpj = orcamento.Veiculo.Cliente.cpf_cnpj.length === 11
                     ? maskCpf.apply(orcamento.Veiculo.Cliente.cpf_cnpj)
                     : maskCnpj.apply(orcamento.Veiculo.Cliente.cpf_cnpj);
                 
-                const parts = orcamento.data.split('-'); // ['2025', '12', '12']
+                const parts = orcamento.data.split('-');
                 orcamento.data = `${parts[2]}/${parts[1]}/${parts[0]}`;
 
                 orcamento.nome = orcamento.Veiculo.Cliente.nome; //Necessário para a tabela
@@ -79,15 +95,22 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
         }
     };
 
+    // Executa buscarOrcamentos ao montar o componente
     useEffect(() => {
         buscarOrcamentos();
     }, []);
 
+    // Função para incluir um novo orçamento
     const incluiOrcamento = async () => {
         try {
+            const token = localStorage.getItem("token");
             const response = await axios.post(
                 "http://localhost:3002/orcamento/", { id: id, data: dayjsDateToString(data), status: status, 
-                    desconto: removeMaskDinheiro(desconto), pago: pago, valor_total: removeMaskDinheiro(valorTotal),  fk_veiculo_id: veiculoId }
+                    desconto: removeMaskDinheiro(desconto), pago: pago, valor_total: removeMaskDinheiro(valorTotal),  fk_veiculo_id: veiculoId }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
             );
             iterarRequestCount();
             buscarOrcamentos();
@@ -97,11 +120,17 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
         }
     }
 
+    // Função para alterar um orçamento existente
     const alteraOrcamento = async () => {
         try {
+            const token = localStorage.getItem("token");
             const response = await axios.put(
                 `http://localhost:3002/orcamento/${id}`, { data: dayjsDateToString(data), status: status, 
-                    desconto: removeMaskDinheiro(desconto), pago: pago, valor_total: removeMaskDinheiro(valorTotal), fk_veiculo_id: veiculoId }
+                    desconto: removeMaskDinheiro(desconto), pago: pago, valor_total: removeMaskDinheiro(valorTotal), fk_veiculo_id: veiculoId }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
             );
             iterarRequestCount();
             if(response.status === 204) {
@@ -114,10 +143,16 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
         }
     }
 
+    // Função para excluir um orçamento
     const excluirOrcamento = async () => {
         try {
+            const token = localStorage.getItem("token");
             const response = await axios.delete(
-                `http://localhost:3002/orcamento/${id}`
+                `http://localhost:3002/orcamento/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
             );
             iterarRequestCount();
             console.log(response);
@@ -131,6 +166,7 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
         }
     }
 
+    // Função chamada ao selecionar uma linha da tabela
     const onRowSelect = (rowId) => {
         const selectedRow = orcamentos.find(orcamento => orcamento.id === rowId);
         if (selectedRow) {
@@ -150,6 +186,7 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
         }
     }
 
+    // Limpa os campos do formulário
     function clearFields() {
         setId('');
         setData(dayjs(''));
@@ -165,6 +202,7 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
         setIdentificacaoVeiculo('');
     }
 
+    // Estados para armazenar os valores dos campos do formulário
     const [id, setId] = useState('');
     const [data, setData] = useState(dayjs(''));
     const [status, setStatus] = useState('');
@@ -180,10 +218,14 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
     const [modeloVeiculo, setModeloVeiculo] = useState('');
     const [identificacaoVeiculo, setIdentificacaoVeiculo] = useState('');
 
+    // Renderização do componente
     return (
         <Stack spacing={2}>
+            {/* Tabela de orçamentos */}
             <Tabela entidade={"Orçamentos"} colunas={columns} linhas={orcamentos} idFunc={(linha) => {return linha.id} } onRowSelect={onRowSelect}/>
+            {/* Campos do formulário */}
             <Stack spacing={2} direction="row">
+                {/* Campos do orçamento */}
                 <InputCrud nomeCampo={"Id do orçamento"} value={id} setValue={setId} numero={true} maxLength={50}/>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DatePicker
@@ -214,6 +256,7 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
                 <InputCrud nomeCampo={"Valor total"} value={valorTotal} setValue={setValorTotal} dinheiro={true} maxLength={16}/>
                 <FormControlLabel control={<Checkbox checked={pago} onChange={(e) => setPago(e.target.checked)} />} label="Pago" />
             </Stack> }
+            {/* Campos do veículo */}
             <Stack spacing={2} direction="row">
                 <InputCrud nomeCampo={"Id do Veículo"} value={veiculoId} setValue={setVeiculoId} numero={true} maxLength={50}/>
                 <InputCrud nomeCampo={"Marca do Veículo"} value={marcaVeiculo} setValue={setMarcaVeiculo} disabled={true}/>
@@ -225,11 +268,13 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
             { isSmallScreen && <Stack spacing={2} direction="row">
                 <InputCrud nomeCampo={"Identificação do Veículo"} value={identificacaoVeiculo} setValue={setIdentificacaoVeiculo} disabled={true}/>
             </Stack> }
+            {/* Campos do cliente */}
             <Stack spacing={2} direction="row">
                 <InputCrud nomeCampo={"Nome do Cliente"} value={nomeCliente} setValue={setNomeCliente} disabled={true}/>
                 <InputCrud nomeCampo={"CPF/CNPJ do Cliente"} value={cpfCnpjCliente} setValue={setCpfCnpjCliente} disabled={true}/>
                 <FormControlLabel control={<Checkbox checked={bomPagadorCliente} disabled />} label="Bom Pagador" />
             </Stack>
+            {/* Botões de ação */}
             <Stack spacing={2} direction="row">
                 <BotoesCrud incluir={incluiOrcamento} alterar={alteraOrcamento} excluir={excluirOrcamento}/>
                 { !isSmallScreen && <>

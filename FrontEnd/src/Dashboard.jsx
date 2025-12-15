@@ -1,3 +1,4 @@
+// Importação de hooks, bibliotecas e componentes externos
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Box, Stack } from "@mui/material";
@@ -5,6 +6,7 @@ import SimpleText from "./simpleText";
 import StringMask from "string-mask";
 
 export default function Dashboard({ alertHandler, tipoUsuario, requestCount, dashboardRequestCount, iterarDashboardRequestCount }) {
+    // Estados para armazenar os dados do dashboard
     const [quantidadeClientes, setQuantidadeClientes] = useState('');
     const [quantidadeBomPagadores, setQuantidadeBomPagadores] = useState('');
     const [quantidadeOrcamentos, setQuantidadeOrcamentos] = useState('');
@@ -14,34 +16,43 @@ export default function Dashboard({ alertHandler, tipoUsuario, requestCount, das
     const [quantidadeVeiculosOrcamento, setQuantidadeVeiculosOrcamento] = useState('');
     const [quantidadeVeiculos, setQuantidadeVeiculos] = useState('');
 
-    const maskDinheiro = new StringMask('R\$ #.##0,00', {reverse: true});
+    // Máscara para formatação de valores monetários
+    const maskDinheiro = new StringMask('R$ #.##0,00', {reverse: true});
     
+    // Função para remover máscara de valores monetários
     function removeMask(text) {
         if(text[text.length - 2] == '.') {
             text += '0';
-        } else if(parseInt(text) == parseFloat(text)) { //a soma foi inteira
+        } else if(parseInt(text) == parseFloat(text)) { //a soma foi inteira, portanto é necessário adicionar mais zeros para transformar em dinheiro
             text += "00";
         }
         return text.replace(/\D/g, '');
     }
 
+    // Função para buscar dados do dashboard em múltiplos endpoints
     const buscarDados = async () => {
+        const token = localStorage.getItem("token");
         const endpoints = [
-            "http://localhost:3002/veiculo/dashboard",
+            "http://localhost:3002/veiculo/dashboard", 
             "http://localhost:3002/cliente/dashboard",
             "http://localhost:3002/orcamento/dashboard",
         ];
         try {
-            // 1. Map the endpoints array to an array of Promises (the axios calls)
-            const promises = endpoints.map(url => axios.get(url));
+            // Mapeia os endpoints para Promises de requisições axios
+            const promises = endpoints.map(url => axios.get(url, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }));
 
-            // 2. Use Promise.all() to wait for all Promises to resolve concurrently
+            // Aguarda todas as requisições terminarem
             const [
                 veiculoResponse, 
                 clienteResponse, 
                 orcamentoResponse
             ] = await Promise.all(promises);
             iterarDashboardRequestCount();
+            // Atualiza os estados com os dados recebidos
             setQuantidadeClientes(clienteResponse.data.dados.quantidadeClientes);
             setQuantidadeBomPagadores(clienteResponse.data.dados.quantidadeBomPagadores);
             setQuantidadeVeiculos(veiculoResponse.data.dados.quantidadeVeiculos);
@@ -56,16 +67,17 @@ export default function Dashboard({ alertHandler, tipoUsuario, requestCount, das
         }
     }
 
+    // Atualiza os dados do dashboard ao montar o componente ou quando requestCount muda
     useEffect(() => {
         buscarDados();
     }, [requestCount]);
 
-    console.log()
-
+    // Renderização do dashboard
     return (
         <Box sx={{ height: '100%', width: { xs: 400, md: 1000 } }}>
             <Stack spacing={2}>
                 <SimpleText component="h2" text={"Dashboard"}/>
+                {/* Exibe informações do sistema apenas para administradores */}
                 { tipoUsuario == "Administrador" && <Stack spacing={2} direction={"row"}>
                         <Box sx={{ height: '100%', width: 1000 }}>
                             <SimpleText component="h3" text={"Sistema"}/>
@@ -73,6 +85,7 @@ export default function Dashboard({ alertHandler, tipoUsuario, requestCount, das
                             <SimpleText component="p" text={`Quantidade de pedidos realizados nessa instância (exceto pedidos da dashboard): ${requestCount}`}/>
                         </Box>
                     </Stack> }
+                {/* Bloco de informações de veículos e clientes */}
                 <Stack spacing={2} direction={"row"}>
                     <Box sx={{ height: '100%', width: 500 }}>
                         <SimpleText component="h3" text={"Veículos"}/>
@@ -84,6 +97,7 @@ export default function Dashboard({ alertHandler, tipoUsuario, requestCount, das
                         <SimpleText component="p" text={`Quantidade de clientes bom pagadors: ${quantidadeBomPagadores}`}/>
                     </Box>
                 </Stack>
+                {/* Bloco de informações de orçamentos */}
                 <Stack spacing={2} direction={"row"}>
                     <Box sx={{ height: '100%', width: 1000 }}>
                         <SimpleText component="h3" text={"Orçamento"}/>
