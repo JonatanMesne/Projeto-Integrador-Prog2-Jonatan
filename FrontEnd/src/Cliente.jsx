@@ -97,8 +97,7 @@ export default function Cliente({ alertHandler, iterarRequestCount }) {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            }
-            );
+            });
             iterarRequestCount();
             buscarClientes();
         } catch (error) {
@@ -137,8 +136,7 @@ export default function Cliente({ alertHandler, iterarRequestCount }) {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            }
-            );
+            });
             iterarRequestCount();
             if(response.status === 204) {
                 alertHandler(204, "CPF/CNPJ", "cliente", "excluir");

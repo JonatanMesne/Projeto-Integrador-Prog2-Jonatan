@@ -110,8 +110,7 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            }
-            );
+            });
             iterarRequestCount();
             buscarOrcamentos();
         } catch (error) {
@@ -130,8 +129,7 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            }
-            );
+            });
             iterarRequestCount();
             if(response.status === 204) {
                 alertHandler(204, "id", "orcamento", "alterar");
@@ -152,8 +150,7 @@ export default function Orcamento({ alertHandler, iterarRequestCount }) {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            }
-            );
+            });
             iterarRequestCount();
             console.log(response);
             if(response.status === 204) {

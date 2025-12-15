@@ -97,8 +97,7 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            }
-            );
+            });
             iterarRequestCount();
             buscarVeiculos();
         } catch (error) {
@@ -129,8 +128,7 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            }
-            );
+            });
             iterarRequestCount();
             if (response.status === 204) {
                 alertHandler(204, "ID", "veículo", "alterar");
@@ -155,8 +153,7 @@ export default function ClienteVeiculos({ alertHandler, cpfCnpj, iterarRequestCo
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            }
-            );
+            });
             iterarRequestCount();
             if (response.status === 204) {
                 alertHandler(204, "ID", "veículo", "excluir");
